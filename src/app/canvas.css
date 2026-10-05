@@ -1,0 +1,552 @@
+/* Canvas, nodes and node content. Node sizes use `em` so a node's
+   font-size (set per depth) scales everything inside it. */
+
+.km-panel {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: color-mix(in oklch, var(--background) 88%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.km-canvas {
+  --zoom: 1;
+  --edge: color-mix(in oklch, var(--foreground) 30%, var(--background));
+  --node-border: color-mix(in oklch, var(--foreground) 16%, var(--background));
+  background: var(--background);
+}
+
+.km-canvas .react-flow {
+  background: var(--background);
+}
+
+/* ---------- Nodes ---------- */
+
+.km-canvas .react-flow__node {
+  transition: opacity 180ms ease;
+  cursor: default;
+}
+
+.km-canvas .react-flow__node.km-hidden,
+.km-canvas .react-flow__edge.km-hidden {
+  opacity: 0;
+  pointer-events: none !important;
+}
+
+.km-node {
+  position: relative;
+  min-width: 5em;
+  padding: 0.6em 0.85em;
+  border: 1px solid var(--node-border);
+  border-radius: 0.65em;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  line-height: 1.45;
+  overflow-wrap: break-word;
+}
+
+.km-node.km-root {
+  min-width: 9em;
+  padding: 0.85em 1.1em;
+  border: 2px solid var(--foreground);
+  border-radius: 0.8em;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.08);
+}
+
+.km-node.km-selected {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+}
+
+.km-node.km-editing {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+  cursor: auto;
+}
+
+.km-node.km-drop-target {
+  outline: 2px dashed var(--foreground);
+  outline-offset: 5px;
+  background: var(--muted);
+}
+
+.react-flow__node.dragging .km-node {
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.14);
+  opacity: 0.9;
+}
+
+.km-title {
+  font-weight: 500;
+  font-size: 1em;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  outline: none;
+}
+
+.km-branch .km-title {
+  font-weight: 600;
+  font-size: 1.08em;
+}
+
+.km-root .km-title {
+  font-weight: 650;
+  font-size: 1.35em;
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+
+.km-placeholder,
+.km-title-input:empty::before {
+  color: var(--muted-foreground);
+  font-weight: 450;
+}
+
+.km-title-input:empty::before {
+  content: attr(data-placeholder);
+}
+
+.km-title-input {
+  cursor: text;
+  min-width: 2em;
+}
+
+.km-body {
+  margin-top: 0.35em;
+  padding-top: 0.35em;
+  border-top: 1px solid var(--border);
+}
+
+/* Zoomed-out view: a bigger title (and summary) on top of the hidden content. */
+.km-overlay {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3em;
+  padding: 0.6em 0.85em;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.km-overlay-title {
+  font-weight: 600;
+  line-height: 1.15;
+  font-size: max(1em, min(calc(14px / var(--zoom)), 30cqh, 2.6em));
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.km-root .km-overlay-title {
+  text-align: center;
+}
+
+.km-overlay[data-lod="summary"] {
+  justify-content: flex-start;
+}
+
+.km-overlay-summary {
+  color: var(--muted-foreground);
+  line-height: 1.3;
+  font-size: max(0.9em, min(calc(11px / var(--zoom)), 1.9em));
+  overflow: hidden;
+  flex: 1;
+  mask-image: linear-gradient(to bottom, black 70%, transparent);
+}
+
+/* Handles: edges attach to the center; the link handle sits on the right edge. */
+.km-center-handle.react-flow__handle {
+  top: 50%;
+  left: 50%;
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.km-link-handle.react-flow__handle {
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 999px;
+  border: 1.5px solid var(--foreground);
+  background: var(--background);
+  right: -0.4em;
+  opacity: 0;
+  transition: opacity 120ms ease, transform 120ms ease;
+  cursor: crosshair;
+}
+
+.km-node:hover > .km-link-handle,
+.km-selected > .km-link-handle,
+.react-flow__handle.connectingfrom {
+  opacity: 1;
+}
+
+.km-link-handle.react-flow__handle:hover {
+  transform: translate(0, -50%) scale(1.3);
+  background: var(--foreground);
+}
+
+.km-canvas[data-exporting] .km-link-handle {
+  display: none;
+}
+
+.km-width-handle {
+  position: absolute;
+  top: 25%;
+  bottom: 25%;
+  right: -0.95em;
+  width: 0.3em;
+  border-radius: 999px;
+  background: var(--node-border);
+  cursor: ew-resize;
+}
+
+.km-width-handle:hover {
+  background: var(--foreground);
+}
+
+/* ---------- Edges ---------- */
+
+.km-edge {
+  stroke: var(--edge);
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+  fill: none;
+}
+
+.km-edge-link {
+  stroke-dasharray: 6 5;
+}
+
+.km-edge-selected,
+.react-flow__edge:hover .km-edge {
+  stroke: var(--foreground);
+}
+
+.react-flow__edge.selected .km-edge {
+  stroke-width: 2.25px;
+}
+
+.km-edge-label {
+  position: absolute;
+  pointer-events: all;
+  padding: 0.1em 0.5em;
+  border-radius: 0.4em;
+  background: var(--background);
+  color: var(--muted-foreground);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.km-edge-label-selected {
+  color: var(--foreground);
+}
+
+.km-edge-label input {
+  min-width: 4em;
+  background: transparent;
+  color: var(--foreground);
+  outline: none;
+  font: inherit;
+  text-align: center;
+}
+
+.react-flow__connection-path {
+  stroke: var(--foreground);
+  stroke-width: 1.5px;
+}
+
+/* ---------- Node content (TipTap) ---------- */
+
+.km-prose {
+  outline: none;
+  font-size: 0.94em;
+  line-height: 1.5;
+}
+
+.km-prose > * + * {
+  margin-top: 0.45em;
+}
+
+.km-prose p {
+  margin: 0;
+}
+
+.km-prose h1,
+.km-prose h2,
+.km-prose h3 {
+  font-weight: 650;
+  line-height: 1.25;
+  margin-top: 0.7em;
+  letter-spacing: -0.01em;
+}
+
+.km-prose > h1:first-child,
+.km-prose > h2:first-child,
+.km-prose > h3:first-child {
+  margin-top: 0;
+}
+
+.km-prose h1 { font-size: 1.4em; }
+.km-prose h2 { font-size: 1.2em; }
+.km-prose h3 { font-size: 1.06em; }
+
+.km-prose ul,
+.km-prose ol {
+  padding-left: 1.3em;
+}
+
+.km-prose ul { list-style: disc; }
+.km-prose ol { list-style: decimal; }
+.km-prose li + li { margin-top: 0.15em; }
+.km-prose li > * + * { margin-top: 0.15em; }
+
+.km-prose ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.1em;
+}
+
+.km-prose ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45em;
+}
+
+.km-prose ul[data-type="taskList"] li > label {
+  flex-shrink: 0;
+  margin-top: 0.22em;
+  user-select: none;
+}
+
+.km-prose ul[data-type="taskList"] li > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.km-prose ul[data-type="taskList"] input[type="checkbox"] {
+  width: 0.9em;
+  height: 0.9em;
+  accent-color: var(--foreground);
+  cursor: pointer;
+}
+
+.km-prose ul[data-type="taskList"] li[data-checked="true"] > div {
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+}
+
+.km-prose blockquote {
+  border-left: 0.2em solid var(--foreground);
+  padding-left: 0.75em;
+  color: color-mix(in oklch, var(--foreground) 80%, var(--background));
+}
+
+.km-prose [data-type="callout"] {
+  padding: 0.6em 0.8em;
+  border-radius: 0.5em;
+  background: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.km-prose [data-type="callout"] > * + * {
+  margin-top: 0.35em;
+}
+
+.km-prose hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 0.8em 0;
+}
+
+.km-prose hr.ProseMirror-selectednode {
+  border-top-color: var(--foreground);
+}
+
+.km-prose a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-color: var(--muted-foreground);
+}
+
+.km-prose code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.88em;
+  padding: 0.1em 0.3em;
+  border-radius: 0.3em;
+  background: var(--muted);
+}
+
+.km-prose pre {
+  padding: 0.65em 0.8em;
+  border-radius: 0.5em;
+  background: var(--muted);
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.km-prose pre code {
+  padding: 0;
+  background: none;
+  font-size: 0.85em;
+}
+
+.km-prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.4em;
+}
+
+.km-prose[contenteditable="true"] img.ProseMirror-selectednode {
+  outline: 2px solid var(--foreground);
+}
+
+.km-prose .tableWrapper {
+  overflow-x: auto;
+}
+
+.km-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.92em;
+}
+
+.km-prose th,
+.km-prose td {
+  border: 1px solid var(--node-border);
+  padding: 0.3em 0.45em;
+  vertical-align: top;
+  text-align: left;
+}
+
+.km-prose th {
+  background: var(--muted);
+  font-weight: 600;
+}
+
+.km-prose td > p,
+.km-prose th > p {
+  margin: 0;
+}
+
+.km-prose .selectedCell {
+  background: color-mix(in oklch, var(--foreground) 8%, transparent);
+}
+
+/* Toggle (details) */
+.km-prose [data-type="details"] {
+  display: flex;
+  gap: 0.3em;
+  align-items: flex-start;
+}
+
+.km-prose [data-type="details"] > button {
+  flex-shrink: 0;
+  width: 1.2em;
+  height: 1.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25em;
+  cursor: pointer;
+  background: none;
+}
+
+.km-prose [data-type="details"] > button:hover {
+  background: var(--muted);
+}
+
+.km-prose [data-type="details"] > button::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-top: 0.3em solid transparent;
+  border-bottom: 0.3em solid transparent;
+  border-left: 0.45em solid currentColor;
+  transition: transform 120ms ease;
+}
+
+.km-prose [data-type="details"].is-open > button::before {
+  transform: rotate(90deg);
+}
+
+.km-prose [data-type="details"] > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.km-prose [data-type="details"] summary {
+  display: block;
+  list-style: none;
+  font-weight: 500;
+}
+
+.km-prose [data-type="details"] summary::-webkit-details-marker {
+  display: none;
+}
+
+.km-prose [data-type="detailsContent"] {
+  margin-top: 0.25em;
+}
+
+.km-prose [data-type="detailsContent"] > * + * {
+  margin-top: 0.35em;
+}
+
+/* Placeholders */
+.km-prose .is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--muted-foreground);
+}
+
+.km-prose .ProseMirror-gapcursor::after {
+  border-top-color: var(--foreground);
+}
+
+/* Table controls shown while the cursor is in a table */
+.km-table-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+  margin-top: 0.5em;
+}
+
+.km-table-tools button {
+  font-size: 0.75em;
+  padding: 0.2em 0.55em;
+  border-radius: 0.35em;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.km-table-tools button:hover {
+  color: var(--foreground);
+  border-color: var(--foreground);
+}
+
+/* Hide the editor's trailing empty paragraph when not editing. */
+.km-prose[contenteditable="false"] > p:last-child:has(> br.ProseMirror-trailingBreak:only-child) {
+  display: none;
+}
+
+.km-prose[contenteditable="false"] [data-type="detailsContent"] > p:last-child:not(:first-child):has(> br.ProseMirror-trailingBreak:only-child) {
+  display: none;
+}

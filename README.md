@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Knowledge Maps
 
-## Getting Started
+Mind maps with rich, Notion-style nodes on an infinite canvas.
 
-First, run the development server:
+Put a topic in the center and branch out. Every node can hold headings, lists,
+to-dos, toggles, callouts, quotes, code, tables and images. The map lays itself
+out radially, and nodes adapt their size to their content. Zoom out and details
+give way to titles; the deepest levels fade out first.
+
+## Features
+
+- **Radial auto-layout** – no manual positioning. Drag a node onto another to
+  change its parent, or drag it around its parent to reorder siblings.
+- **Rich nodes** – type `/` inside a node for blocks, or use Markdown shortcuts.
+- **Semantic zoom** – full content up close, title + summary further out, titles
+  only when far away. Deeper rings are drawn smaller and fade out first.
+- **Connections** – label any connection (double-click it) and link any two
+  nodes with a dashed cross-link (drag the dot on a node's right edge).
+- **Export / import** – lossless JSON (`.kmap.json`) and PNG images.
+- **Local-first** – maps are stored in your browser (IndexedDB). No account.
+- Undo/redo, search (`Ctrl K`), light/dark mode. Press `?` for all shortcuts.
+
+## Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Built with [Next.js](https://nextjs.org), [shadcn/ui](https://ui.shadcn.com),
+[TipTap](https://tiptap.dev) and [React Flow](https://reactflow.dev).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How it works
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Path | Purpose |
+| --- | --- |
+| `src/lib/layout.ts` | Radial layout for nodes of arbitrary size |
+| `src/lib/lod.ts` | Depth scaling and zoom thresholds (semantic zoom) |
+| `src/store/map-store.ts` | Map state, editing state, undo/redo |
+| `src/components/map/` | Canvas, node and edge components, editor chrome |
+| `src/components/editor/` | TipTap setup, slash menu, callout block |
 
-## Learn More
+## License
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[MIT](LICENSE)
